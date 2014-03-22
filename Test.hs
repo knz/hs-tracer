@@ -3,7 +3,7 @@ import qualified Debug.Trace (trace)
 import Control.Applicative (Applicative(..))
 import Control.Monad.Trans.Class (MonadTrans, lift)
 
-type MT = TracerT PosStack IO
+type MT a = IOTracer PosStack a
 
 mycode :: MT Int
 mycode = do
