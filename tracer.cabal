@@ -13,9 +13,11 @@ description:
    Simplifies print-based debugging.
 
 build-type: Simple
+ghc-options: -Wall
 exposed-modules: 
    Debug.Tracer
 build-depends:
-   base,
-   mtl, transformers
+   base >= 4.0 && < 5.0,
+   mtl >= 0.1, 
+   transformers >= 0.3
 
