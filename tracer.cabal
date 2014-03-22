@@ -1,23 +1,27 @@
-name:         tracer
-version:      0.1
-license:      BSD3
-license-file: LICENSE
-author:       Raphael 'kena' Poss
-maintainer:   kena@vodka-pomme.net
-category:     Debug
-synopsis:     Tracing utilities for Functor/Applicative/Monad types
-description:
+Name:         tracer
+Version:      0.1
+Cabal-version: >= 1.6
+License:      BSD3
+License-file: LICENSE
+Author:       Raphael 'kena' Poss
+Maintainer:   kena@vodka-pomme.net
+Synopsis:     Tracing utilities for Functor/Applicative/Monad types
+Category:     Debug
+Homepage:     https://github.com/knz/hs-tracer
+
+Description:
    Transformers for 'Functor', 'Applicative' and 'Monad' types that add
    tracing facilities for computation steps and applicative nesting.
 
    Simplifies print-based debugging.
 
-build-type: Simple
-ghc-options: -Wall
-exposed-modules: 
-   Debug.Tracer
-build-depends:
-   base >= 4.0 && < 5.0,
-   mtl >= 0.1, 
-   transformers >= 0.3
+Build-type: Simple
 
+Library
+   Build-depends: base >= 4.0 && < 5.0, mtl >= 0.1, transformers >= 0.3
+   Exposed-modules: Debug.Tracer
+   GHC-Options: -Wall
+
+Source-repository head
+   Type: git
+   Location: git://github.com/knz/hs-tracer.git
