@@ -1,3 +1,7 @@
+==============
+ Debug.Tracer
+==============
+
 Tracing utilities for Haskell code
 ==================================
 
@@ -8,25 +12,25 @@ explicit I/O typing is required.
 Note: the file defining this documentation (``README.lhs``) is itself
 a Haskell program, which can be run for testing the library.
 
-Example
--------
+.. contents::
+
+How to use
+----------
 
 The following code defines a function ``myfact`` that computes
 the factorial of an integer number::
 
 > import Debug.Tracer
 >
-> -- Create a shortcut for 'PureTracer PostStack',
-> -- a tracer for pure computations able to track
-> -- labeled basic blocks in a monadic context (eg. do-blocks)
+> -- This type declaration aliases 'PureTracer PosStack',
+> -- to make its name shorter for reuse.
 > type Tr a = PureTracer PosStack a
 >
 > -- An example function using our tracer
 > myfact :: Int -> Tr Int
 > myfact n = do
 >              trace $ "entering with n = " ++ (show n)
->              if n == 1 then
->                 return n
+>              if n == 1 then return n
 >              else do
 >                 r <- enter $ myfact (n - 1)
 >                 trace $ "just computed r = " ++ (show r)
@@ -40,92 +44,171 @@ As the example demonstrates, the **Tracer** modules allows a
 programmer to write pure code in a semi-imperative style, with the
 ``trace`` and ``enter`` actions helping to report execution progress.
 
-For example, if the code above is extended to become
-a fully-fledged program as follows::
+For example, if we extend the example to become
+a fully-fledged program::
 
 >
 > main :: IO ()
 > main = do
->           putStrLn $ show $ myfact' 10
+>      putStrLn $ show $ myfact' 10
 
 Then this program would print a trace like the following::
 
    1 myfact +1: entering with n = 10
-   2 myfact +1> +1: entering with n = 9
-   3 myfact +1> +1> +1: entering with n = 8
-   4 myfact +1> +1> +1> +1: entering with n = 7
-   5 myfact +1> +1> +1> +1> +1: entering with n = 6
-   6 myfact +1> +1> +1> +1> +1> +1: entering with n = 5
-   7 myfact +1> +1> +1> +1> +1> +1> +1: entering with n = 4
-   8 myfact +1> +1> +1> +1> +1> +1> +1> +1: entering with n = 3
-   9 myfact +1> +1> +1> +1> +1> +1> +1> +1> +1: entering with n = 2
-   10 myfact +1> +1> +1> +1> +1> +1> +1> +1> +1> +1: entering with n = 1
-   13 myfact +1> +1> +1> +1> +1> +1> +1> +1> +1> +3: just computed r = 1
-   16 myfact +1> +1> +1> +1> +1> +1> +1> +1> +3: just computed r = 2
-   19 myfact +1> +1> +1> +1> +1> +1> +1> +3: just computed r = 6
-   22 myfact +1> +1> +1> +1> +1> +1> +3: just computed r = 24
-   25 myfact +1> +1> +1> +1> +1> +3: just computed r = 120
-   28 myfact +1> +1> +1> +1> +3: just computed r = 720
-   31 myfact +1> +1> +1> +3: just computed r = 5040
-   34 myfact +1> +1> +3: just computed r = 40320
-   37 myfact +1> +3: just computed r = 362880
+   4 myfact +2> +1: entering with n = 9
+   7 myfact +2> +2> +1: entering with n = 8
+   10 myfact +2> +2> +2> +1: entering with n = 7
+   13 myfact +2> +2> +2> +2> +1: entering with n = 6
+   16 myfact +2> +2> +2> +2> +2> +1: entering with n = 5
+   19 myfact +2> +2> +2> +2> +2> +2> +1: entering with n = 4
+   22 myfact +2> +2> +2> +2> +2> +2> +2> +1: entering with n = 3
+   25 myfact +2> +2> +2> +2> +2> +2> +2> +2> +1: entering with n = 2
+   28 myfact +2> +2> +2> +2> +2> +2> +2> +2> +2> +1: entering with n = 1
+   32 myfact +2> +2> +2> +2> +2> +2> +2> +2> +2> +3: just computed r = 1
+   36 myfact +2> +2> +2> +2> +2> +2> +2> +2> +3: just computed r = 2
+   40 myfact +2> +2> +2> +2> +2> +2> +2> +3: just computed r = 6
+   44 myfact +2> +2> +2> +2> +2> +2> +3: just computed r = 24
+   48 myfact +2> +2> +2> +2> +2> +3: just computed r = 120
+   52 myfact +2> +2> +2> +2> +3: just computed r = 720
+   56 myfact +2> +2> +2> +3: just computed r = 5040
+   60 myfact +2> +2> +3: just computed r = 40320
+   64 myfact +2> +3: just computed r = 362880
    3628800
 
+Overview
+--------
+
+The library can be used at two levels. At the "user" level,
+the functions ``trace``, ``enter`` and ``label`` are defined
+and are ready to use in do-blocks, together with
+a suitable type signature as in the example above.
+
+Three monads are pre-defined at this level:
+
+- ``PureTracer`` traces pure computations.
+- ``MaybeTracer`` extends the ``Maybe`` monad with tracing.
+- ``IOTracer`` extends the ``IO`` monad with tracing.
+
+In addition,  **Debug.Trace** also provides a `monad
+transformer`__ called **TraceT**, which can instrument any other monad
+with tracing.
+
+.. __: http://book.realworldhaskell.org/read/monad-transformers.html
+
+For example, to equip the ``State`` monad with tracing::
+
+  type Tr a = TraceT PosStack State a
+
+The icing on the cake is that **TraceT** not only instruments
+`Monad`__ types, but also any `Applicative`__ and `Functor`__ types.
+
+.. __: http://www.haskell.org/ghc/docs/latest/html/libraries/base/Control-Applicative.html
+.. __: http://www.haskell.org/ghc/docs/latest/html/libraries/base/Control-Monad.html#t:Monad
+.. __: http://www.haskell.org/ghc/docs/latest/html/libraries/base/Control-Monad.html#t:Functor
+
+The type "``TraceT PosXX f``" is a ``Functor`` if ``f`` is a functor,
+is ``Applicative`` if ``f`` is applicative, and is a ``Monad`` if ``f`` is a monad.
+
+More examples
+-------------
+
+Stacking vs. non-stacking with ``enter``
+````````````````````````````````````````
+
+If a (pure) function "looks" like a flat loop, chances are its trace
+will be flat, too::
+
+>      let
+>            myfact2 :: Int -> Int -> Tr Int
+>            myfact2 r n = do
+>                   trace $ "processing n = " ++ (show n) ++ ", r = " ++ (show r)
+>                   if n == 1 then return r
+>                   else myfact2 (n * r) (n - 1)
+>      putStrLn $ show $ runTracer "myFact2" $ myfact2 1 10
+
+This program, which avoids using ``enter``, would print::
+
+   1 myFact2 +1: processing n = 10, r = 1
+   2 myFact2 +2: processing n = 9, r = 10
+   3 myFact2 +3: processing n = 8, r = 90
+   4 myFact2 +4: processing n = 7, r = 720
+   5 myFact2 +5: processing n = 6, r = 5040
+   6 myFact2 +6: processing n = 5, r = 30240
+   7 myFact2 +7: processing n = 4, r = 151200
+   8 myFact2 +8: processing n = 3, r = 604800
+   9 myFact2 +9: processing n = 2, r = 1814400
+   10 myFact2 +10: processing n = 1, r = 3628800
+   3628800
+
+The "stacking" in the output follows the uses of the action
+``enter``. To avoid stacking, simply leave ``enter`` away.
+
+Relative counts with ``label``
+``````````````````````````````
+
+In a complex computation, the action ``label`` can mark basic blocks,
+as follows::
+
+>      let
+>            complex :: Int -> Tr Int
+>            complex n = do
+>                   label "start"
+>                   x <- return $ 1 - n
+>                   y <- return $ 2 * n
+>                   t <- return $ x * y
+>                   trace $ "here t = " ++ (show t)
+>                   u <- return $ y - t
+>
+>                   label "middle"
+>                   v <- return $ t * x
+>                   trace $ "v = " ++ (show v)
+>
+>                   m <- return $ n * n
+>                   o <- return $ m + m + u + v
+>                   label "end"
+>                   trace $ "returning o = " ++ (show o)
+>                   return o
+>      putStrLn $ show $ runTracer "complex" $ complex 10
+
+This could print the following trace::
+
+ 12 complex start+11: here t = -180
+ 21 complex middle+5: v = 1620
+ 30 complex end+2: returning o = 2020
+ 2020
+
+Note how the count on the left is global (shared by the entire tracing
+compound), whereas the count on the right is local, relative to the
+point a label was last positioned.
+
+Ordering with other side-effects
+``````````````````````````````````
+
+Traces play well with other side effects. For example,
+I/O actions are properly ordered::
 
 
+>      let
+>            someio :: Int -> TrIO ()
+>            someio n = do
+>                  d <- return $ n + n
+>                  trace "before io"
+>                  lift $ putStrLn $ "d = " ++ (show d)
+>                  trace "after io"
+>                  return ()
+>
+>      runTracerT "someio" (someio 10)
 
-.. code:: haskell
+This program would print as expected::
 
- import Debug.Tracer
- import qualified Debug.Trace (trace)
- import Control.Applicative (Applicative(..))
- import Control.Monad.Trans.Class (MonadTrans, lift)
+  4 someio +4: before io
+  d = 20
+  8 someio +8: after io
 
- type MT a = IOTracer PosStack a
+With the message "``d = 20``" properly interleaved with trace
+messages.
 
- mycode :: MT Int
- mycode = do
-         label "mycode"
-         trace "start"
-         x <- return $ Debug.Trace.trace "some3" 3
-         trace "between"
-         y <- return $ Debug.Trace.trace "some4" 4
-         trace "end"
-         return $ Debug.Trace.trace "some+" (x + y)
 
- fact n = if n == 1 then 1 else n * fact (n-1)
+Note: the examples above also use the following type declaration::
 
- myfact ::  Int -> MT Int
- myfact n = do
-      label "myfact"
-      trace $ "fact " ++ (show n)
-      if n == 1 then return n
-      else do
-           r <- enter $ myfact (n - 1)
-           return (n * r)
-
- myfact2 :: Int -> Int -> MT Int
- myfact2 r n = do
-      label "myfact2"
-      trace $ "fact2 " ++ (show n)
-      if n == 1 then return r
-      else myfact2 (n * r) (n - 1)
-
- main = do
-       putStrLn "at the early beginning"
-       v <- runTracerT "top" $ do
-                 trace "before-mycode"
-                 t <- enter mycode;
-                 trace "after-mycode"
-                 label "facttest"
-                 v <- enter $ myfact 10
-                 v' <- enter $ myfact2 1 10
-                 trace "after-fact"
-                 lift $ putStrLn $ "IO actions are allowed" ++ (show (v+v'))
-                 trace "after-io"
-                 tv <- (pure fact) <*> mycode
-                 trace "more fact"
-
-                 return (t + tv)
-       putStrLn "all said and done"
-       putStrLn . show $ v
+> type TrIO a = IOTracer PosStack a
