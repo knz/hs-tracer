@@ -1,0 +1,21 @@
+name:         tracer
+version:      0.1
+license:      BSD3
+license-file: LICENSE
+author:       Raphael 'kena' Poss
+maintainer:   kena@vodka-pomme.net
+category:     Debug
+synopsis:     Tracing utilities for Functor/Applicative/Monad types
+description:
+   Transformers for 'Functor', 'Applicative' and 'Monad' types that add
+   tracing facilities for computation steps and applicative nesting.
+
+   Simplifies print-based debugging.
+
+build-type: Simple
+exposed-modules: 
+   Debug.Tracer
+build-depends:
+   base,
+   mtl, transformers
+
