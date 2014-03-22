@@ -131,29 +131,29 @@ dotrace :: String -> String -> a -> a
 dotrace pref msg = Debug.Trace.trace (pref ++ ": " ++ msg)
 
 instance Pos PosShort where
-   pinitial _      = Ps 0
+   pinitial _      = Ps 1
    plabel   _      = id
    pstep    (Ps n) = Ps (n+1)
    prewind  (Ps n) = Ps (n-1)
-   ppush           = id
+   ppush    (Ps n) = Ps (n+1)
    ppop     _      = id
    ptrace   (Ps n) = dotrace (show n)
 
 instance Pos PosRel where
-   pinitial _                  = Pr 0 0
+   pinitial _                  = Pr 1 1
    plabel   _                  = id
    pstep    (Pr n i)           = Pr (n+1) (i+1)
    prewind  (Pr n i)           = Pr (n-1) (i-1)
-   ppush    (Pr n _)           = Pr n 0
+   ppush    (Pr n _)           = Pr (n+1) 1
    ppop     (Pr _ i) (Pr n' _) = Pr n' i
    ptrace   (Pr n i)           = dotrace ((show n) ++ " +" ++ (show i))
 
 instance Pos PosStack where
-   pinitial  w                            = Pst 0 w "" 0
+   pinitial  w                            = Pst 1 w "" 1
    plabel    w (Pst n c _ i)              = Pst n c w i
    pstep     (Pst n c l i)                = Pst (n+1) c l (i+1)
    prewind   (Pst n c l i)                = Pst (n-1) c l (i-1)
-   ppush     (Pst n c l i)                = Pst n (c ++ " " ++ l ++ "+" ++ (show i) ++ ">") "" 0
+   ppush     (Pst n c l i)                = Pst (n+1) (c ++ " " ++ l ++ "+" ++ (show i) ++ ">") "" 1
    ppop      (Pst _ c l i) (Pst n' _ _ _) = Pst n' c l i
    ptrace    (Pst n c l i)                = dotrace ((show n) ++ " " ++ c ++ " " ++ l ++ "+" ++ (show i))
 
